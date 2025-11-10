@@ -1,0 +1,21 @@
+{
+  "name": "myrient-manager",
+  "version": "1.0.0",
+  "description": "Electron app para listar arquivos do Myrient",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "Leo santos",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "node-fetch": "^2.7.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "electron": "^39.1.1"
+  }
+}
