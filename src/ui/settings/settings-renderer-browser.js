@@ -21,6 +21,8 @@ class SettingsRenderer {
       maxHistory: document.getElementById('max-history'),
       maxHistoryValue: document.getElementById('max-history-value'),
       autoExtract: document.getElementById('auto-extract'),
+      autoConvertISO: document.getElementById('auto-convert-iso'),
+      autoConvertContainer: document.getElementById('auto-convert-iso-group'),
       
       testUrlBtn: document.getElementById('test-url-btn'),
       browsePathBtn: document.getElementById('browse-path-btn'),
@@ -58,8 +60,15 @@ class SettingsRenderer {
     });
 
     this.elements.autoExtract.addEventListener('change', () => {
+      this.updateAutoConvertAvailability();
       triggerAutoSave();
     });
+
+    if (this.elements.autoConvertISO) {
+      this.elements.autoConvertISO.addEventListener('change', () => {
+        triggerAutoSave();
+      });
+    }
 
     this.elements.testUrlBtn.addEventListener('click', () => {
       this.testUrl();
@@ -106,6 +115,10 @@ class SettingsRenderer {
     this.elements.maxHistory.value = settings.maxHistory || 100;
     this.elements.maxHistoryValue.textContent = settings.maxHistory || 100;
     this.elements.autoExtract.checked = settings.autoExtract || false;
+    if (this.elements.autoConvertISO) {
+      this.elements.autoConvertISO.value = settings.autoExtract && settings.autoConvertISO ? 'xex' : 'none';
+    }
+    this.updateAutoConvertAvailability();
   }
 
   async testUrl() {
@@ -129,7 +142,10 @@ class SettingsRenderer {
           numConnections: parseInt(this.elements.numConnections.value),
           maxConcurrentDownloads: parseInt(this.elements.maxConcurrent.value),
           maxHistory: parseInt(this.elements.maxHistory.value),
-          autoExtract: this.elements.autoExtract.checked
+          autoExtract: this.elements.autoExtract.checked,
+          autoConvertISO: this.elements.autoExtract.checked && this.elements.autoConvertISO
+            ? this.elements.autoConvertISO.value === 'xex'
+            : false
         };
         
         const saveResult = await window.electronAPI.settings.updateSettings(settings);
@@ -177,7 +193,10 @@ class SettingsRenderer {
       numConnections: parseInt(this.elements.numConnections.value),
       maxConcurrentDownloads: parseInt(this.elements.maxConcurrent.value),
       maxHistory: parseInt(this.elements.maxHistory.value),
-      autoExtract: this.elements.autoExtract.checked
+      autoExtract: this.elements.autoExtract.checked,
+      autoConvertISO: this.elements.autoExtract.checked && this.elements.autoConvertISO
+        ? this.elements.autoConvertISO.value === 'xex'
+        : false
     };
 
     try {
@@ -208,7 +227,10 @@ class SettingsRenderer {
       numConnections: parseInt(this.elements.numConnections.value),
       maxConcurrentDownloads: parseInt(this.elements.maxConcurrent.value),
       maxHistory: parseInt(this.elements.maxHistory.value),
-      autoExtract: this.elements.autoExtract.checked
+      autoExtract: this.elements.autoExtract.checked,
+      autoConvertISO: this.elements.autoExtract.checked && this.elements.autoConvertISO
+        ? this.elements.autoConvertISO.value === 'xex'
+        : false
     };
 
     if (!settings.myrientUrl) {
@@ -301,6 +323,16 @@ class SettingsRenderer {
 
   hideStatus() {
     this.elements.status.classList.add('hidden');
+  }
+
+  updateAutoConvertAvailability() {
+    const canConvert = this.elements.autoExtract.checked;
+    if (this.elements.autoConvertContainer) {
+      this.elements.autoConvertContainer.classList.toggle('hidden', !canConvert);
+    }
+    if (!canConvert && this.elements.autoConvertISO) {
+      this.elements.autoConvertISO.value = 'none';
+    }
   }
 }
 

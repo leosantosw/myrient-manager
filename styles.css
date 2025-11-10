@@ -315,6 +315,56 @@ th.sort-desc .sort-indicator::after {
   color: var(--text-secondary);
 }
 
+.pagination-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.pagination-left,
+.pagination-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.pagination-select {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.pagination-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.pagination-info {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.pagination-btn {
+  min-width: 90px;
+}
+
 .file-name {
   color: var(--text-primary);
   font-weight: 500;
@@ -915,6 +965,58 @@ th.sort-desc .sort-indicator::after {
 .settings-input:read-only {
   background: var(--bg-tertiary);
   cursor: not-allowed;
+}
+
+.settings-select {
+  position: relative;
+}
+
+.settings-select-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.settings-select-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.settings-select::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  pointer-events: none;
+  transition: transform 0.2s, border-color 0.2s;
+  transform: translateY(-35%) rotate(45deg);
+}
+
+.settings-select:focus-within::after {
+  transform: translateY(-60%) rotate(-135deg);
+  border-color: var(--primary-color);
+}
+
+.settings-select-input:disabled {
+  background: var(--bg-tertiary);
+  cursor: not-allowed;
+}
+
+.settings-select-input option[disabled] {
+  color: var(--text-muted);
 }
 
 .input-with-button {

@@ -4,8 +4,11 @@ const state = {
   filteredFiles: [],
   currentSort: { column: null, direction: 'asc' },
   isLoading: false,
-  myrientUrl: null
-}
+  myrientUrl: null,
+  currentPage: 1,
+  pageSize: 10,
+  pageSizeOptions: [10, 25, 50, 100]
+};
 
 const elements = {
   loading: document.getElementById('loading'),
@@ -19,7 +22,12 @@ const elements = {
   emptyState: document.getElementById('empty-state'),
   searchInput: document.getElementById('search-input'),
   refreshBtn: document.getElementById('refresh-btn'),
-  retryBtn: document.getElementById('retry-btn')
+  retryBtn: document.getElementById('retry-btn'),
+  paginationControls: document.getElementById('pagination-controls'),
+  paginationInfo: document.getElementById('pagination-info'),
+  prevPageBtn: document.getElementById('prev-page-btn'),
+  nextPageBtn: document.getElementById('next-page-btn'),
+  pageSizeSelect: document.getElementById('page-size-select')
 };
 
 async function init() {
@@ -94,6 +102,104 @@ function setupEventListeners() {
       sortFiles(column);
     });
   });
+
+  if (elements.pageSizeSelect) {
+    elements.pageSizeSelect.value = String(state.pageSize);
+    elements.pageSizeSelect.addEventListener('change', (event) => {
+      const newSize = parseInt(event.target.value, 10);
+      if (!Number.isNaN(newSize) && newSize > 0) {
+        state.pageSize = newSize;
+        resetPagination();
+        renderFiles();
+        updateStats();
+      }
+    });
+  }
+
+  if (elements.prevPageBtn) {
+    elements.prevPageBtn.addEventListener('click', () => {
+      changePage(-1);
+    });
+  }
+
+  if (elements.nextPageBtn) {
+    elements.nextPageBtn.addEventListener('click', () => {
+      changePage(1);
+    });
+  }
+}
+
+function resetPagination() {
+  state.currentPage = 1;
+}
+
+function getTotalPages() {
+  if (state.filteredFiles.length === 0) {
+    return 1;
+  }
+  return Math.ceil(state.filteredFiles.length / state.pageSize);
+}
+
+function ensureCurrentPageInRange() {
+  const totalPages = getTotalPages();
+  if (state.currentPage > totalPages) {
+    state.currentPage = totalPages;
+  }
+  if (state.currentPage < 1) {
+    state.currentPage = 1;
+  }
+}
+
+function getVisibleFiles() {
+  ensureCurrentPageInRange();
+  const start = (state.currentPage - 1) * state.pageSize;
+  const end = start + state.pageSize;
+  return state.filteredFiles.slice(start, end);
+}
+
+function updatePaginationControls() {
+  if (!elements.paginationControls) {
+    return;
+  }
+
+  const totalItems = state.filteredFiles.length;
+  if (totalItems === 0) {
+    elements.paginationControls.classList.add('hidden');
+    elements.paginationInfo.textContent = '';
+    return;
+  }
+
+  elements.paginationControls.classList.remove('hidden');
+  const totalPages = getTotalPages();
+  ensureCurrentPageInRange();
+
+  if (elements.paginationInfo) {
+    elements.paginationInfo.textContent = `Página ${state.currentPage} de ${totalPages}`;
+  }
+
+  if (elements.pageSizeSelect) {
+    elements.pageSizeSelect.value = String(state.pageSize);
+  }
+
+  const disablePrev = state.currentPage <= 1;
+  const disableNext = state.currentPage >= totalPages;
+
+  if (elements.prevPageBtn) {
+    elements.prevPageBtn.disabled = disablePrev;
+  }
+  if (elements.nextPageBtn) {
+    elements.nextPageBtn.disabled = disableNext;
+  }
+}
+
+function changePage(delta) {
+  const totalPages = getTotalPages();
+  const newPage = state.currentPage + delta;
+  if (newPage < 1 || newPage > totalPages) {
+    return;
+  }
+  state.currentPage = newPage;
+  renderFiles();
 }
 
 async function loadFiles() {
@@ -116,7 +222,8 @@ async function loadFiles() {
 
     state.allFiles = result.data;
     state.filteredFiles = [...state.allFiles];
-    
+    resetPagination();
+
     renderFiles();
     updateStats();
     showContent();
@@ -140,6 +247,7 @@ function filterFiles(query) {
     );
   }
 
+  resetPagination();
   renderFiles();
   updateStats();
 }
@@ -174,6 +282,7 @@ function sortFiles(column) {
     }
   });
 
+  resetPagination();
   updateSortIndicators();
   renderFiles();
 }
@@ -205,18 +314,23 @@ async function renderFiles() {
 
   if (state.filteredFiles.length === 0) {
     showEmptyState();
+    updatePaginationControls();
     return;
   }
 
   hideEmptyState();
 
+  const visibleFiles = getVisibleFiles();
+
   const downloadsResult = await window.electronAPI.downloads.getAll();
   const downloads = downloadsResult.success ? downloadsResult.data : [];
 
-  state.filteredFiles.forEach(file => {
+  visibleFiles.forEach(file => {
     const row = createFileRow(file, downloads);
     elements.filesList.appendChild(row);
   });
+
+  updatePaginationControls();
 }
 
 function createFileRow(file, downloads = []) {
@@ -341,6 +455,9 @@ function showLoading() {
   elements.stats.classList.add('hidden');
   elements.tableContainer.classList.add('hidden');
   elements.emptyState.classList.add('hidden');
+  if (elements.paginationControls) {
+    elements.paginationControls.classList.add('hidden');
+  }
 }
 
 function showContent() {
@@ -348,6 +465,7 @@ function showContent() {
   elements.error.classList.add('hidden');
   elements.stats.classList.remove('hidden');
   elements.tableContainer.classList.remove('hidden');
+  updatePaginationControls();
 }
 
 function showError(message) {
@@ -358,6 +476,9 @@ function showError(message) {
   elements.tableContainer.classList.add('hidden');
   elements.emptyState.classList.add('hidden');
   elements.errorMessage.textContent = message;
+  if (elements.paginationControls) {
+    elements.paginationControls.classList.add('hidden');
+  }
 }
 
 function showInfo(message) {
@@ -368,11 +489,17 @@ function showInfo(message) {
   elements.tableContainer.classList.add('hidden');
   elements.emptyState.classList.add('hidden');
   elements.errorMessage.textContent = message;
+  if (elements.paginationControls) {
+    elements.paginationControls.classList.add('hidden');
+  }
 }
 
 function showEmptyState() {
   elements.tableContainer.classList.add('hidden');
   elements.emptyState.classList.remove('hidden');
+  if (elements.paginationControls) {
+    elements.paginationControls.classList.add('hidden');
+  }
 }
 
 function hideEmptyState() {

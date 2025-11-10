@@ -45,6 +45,12 @@ function createDownloadCard(download) {
       </div>
     ` : ''}
 
+    ${download.status === DOWNLOAD_STATUS.CONVERTING_ISO_TO_XEX ? `
+      <div class="download-extracting-info">
+        ⚙️ Convertendo ISO para XEX...
+      </div>
+    ` : ''}
+
     ${download.status === DOWNLOAD_STATUS.COMPLETED ? `
       <div class="download-completed-info">
         ✅ Concluído • ${formatBytes(download.totalBytes)}
@@ -84,7 +90,7 @@ function createActionButtons(download) {
       break;
 
     case DOWNLOAD_STATUS.EXTRACTING:
-      // Sem botões durante a extração
+    case DOWNLOAD_STATUS.CONVERTING_ISO_TO_XEX:
       break;
 
     case DOWNLOAD_STATUS.COMPLETED:
@@ -128,10 +134,12 @@ function updateDownloadCard(card, download) {
   const needsRebuild = currentStatus !== newStatus && (
     newStatus === DOWNLOAD_STATUS.COMPLETED ||
     newStatus === DOWNLOAD_STATUS.EXTRACTING ||
+    newStatus === DOWNLOAD_STATUS.CONVERTING_ISO_TO_XEX ||
     newStatus === DOWNLOAD_STATUS.ERROR ||
     newStatus === DOWNLOAD_STATUS.IN_PROGRESS ||
     currentStatus === DOWNLOAD_STATUS.COMPLETED ||
     currentStatus === DOWNLOAD_STATUS.EXTRACTING ||
+    currentStatus === DOWNLOAD_STATUS.CONVERTING_ISO_TO_XEX ||
     currentStatus === DOWNLOAD_STATUS.ERROR ||
     currentStatus === DOWNLOAD_STATUS.PENDING
   );

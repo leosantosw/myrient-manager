@@ -166,6 +166,25 @@
           </table>
         </div>
 
+        <div id="pagination-controls" class="pagination-controls hidden">
+          <div class="pagination-left">
+            <label for="page-size-select" class="pagination-label">
+              Itens por página
+            </label>
+            <select id="page-size-select" class="pagination-select">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          <div class="pagination-right">
+            <button id="prev-page-btn" class="btn-secondary pagination-btn" type="button">Anterior</button>
+            <span id="pagination-info" class="pagination-info"></span>
+            <button id="next-page-btn" class="btn-secondary pagination-btn" type="button">Próxima</button>
+          </div>
+        </div>
+
         <div id="empty-state" class="empty-state hidden">
           <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"></circle>
@@ -204,7 +223,6 @@
             </svg>
             <span>Pasta: <strong id="download-path">Carregando...</strong></span>
           </div>
-          <button id="change-path-btn" class="btn-secondary">Alterar</button>
           <button id="open-folder-btn" class="btn-secondary">Abrir Pasta</button>
         </div>
 
@@ -331,6 +349,20 @@
                   id="auto-extract"
                 >
                 <span>Habilitar extração automática</span>
+              </div>
+            </div>
+
+            <div class="settings-group hidden" id="auto-convert-iso-group">
+              <label class="settings-label" for="auto-convert-iso">
+                Conversão Automática de ISO (beta)
+                <span class="settings-hint">Escolha o formato para conversão automática após a extração</span>
+              </label>
+              <div class="settings-select">
+                <select id="auto-convert-iso" class="settings-select-input">
+                  <option value="none">Não converter</option>
+                  <option value="xex">ISO para XEX</option>
+                  <option value="god" disabled>ISO para GOD (em breve)</option>
+                </select>
               </div>
             </div>
           </section>

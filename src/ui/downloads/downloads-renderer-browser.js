@@ -6,12 +6,14 @@ class DownloadsRenderer {
     this.confirmationStates = new Map(); 
     this.elements = {};
     this.downloadCards = new Map();
+    this.currentDownloadPath = null;
   }
 
   async init() {
     this.cacheElements();
     this.setupEventListeners();
     this.setupIPCListeners();
+    this.setupSettingsListener();
     await this.loadDownloads();
   }
 
@@ -103,6 +105,23 @@ class DownloadsRenderer {
     });
   }
 
+  setupSettingsListener() {
+    window.addEventListener('settings-updated', (event) => {
+      const { detail } = event;
+      if (!detail) return;
+
+      const newPath = detail.defaultDownloadPath;
+      if (!newPath || newPath === this.currentDownloadPath) {
+        return;
+      }
+
+      if (this.elements.downloadPath) {
+        this.elements.downloadPath.textContent = newPath;
+      }
+      this.currentDownloadPath = newPath;
+    });
+  }
+
   async loadDownloads() {
     const result = await window.electronAPI.downloads.getAll();
     
@@ -122,6 +141,7 @@ class DownloadsRenderer {
       
       if (result.success && result.data && this.elements.downloadPath) {
         this.elements.downloadPath.textContent = result.data;
+        this.currentDownloadPath = result.data;
       }
     } catch (error) {
       console.error('Erro ao carregar caminho:', error);
@@ -147,7 +167,6 @@ class DownloadsRenderer {
       if (card) {
         updateDownloadCard(card, download);
         
-        // Restore confirmation state if exists
         if (this.confirmationStates.has(download.id)) {
           const cancelBtn = card.querySelector('.btn-cancel');
           if (cancelBtn) {
@@ -185,7 +204,9 @@ class DownloadsRenderer {
         return downloads.filter(d => 
           d.status === DOWNLOAD_STATUS.IN_PROGRESS || 
           d.status === DOWNLOAD_STATUS.PAUSED ||
-          d.status === DOWNLOAD_STATUS.PENDING
+          d.status === DOWNLOAD_STATUS.PENDING ||
+          d.status === DOWNLOAD_STATUS.EXTRACTING ||
+          d.status === DOWNLOAD_STATUS.CONVERTING_ISO_TO_XEX
         );
       
       case 'completed':
@@ -238,7 +259,9 @@ class DownloadsRenderer {
       active: this.downloads.filter(d => 
         d.status === DOWNLOAD_STATUS.IN_PROGRESS || 
         d.status === DOWNLOAD_STATUS.PAUSED ||
-        d.status === DOWNLOAD_STATUS.PENDING
+        d.status === DOWNLOAD_STATUS.PENDING ||
+        d.status === DOWNLOAD_STATUS.EXTRACTING ||
+        d.status === DOWNLOAD_STATUS.CONVERTING_ISO_TO_XEX
       ).length,
       completed: this.downloads.filter(d => d.status === DOWNLOAD_STATUS.COMPLETED).length,
       errors: this.downloads.filter(d => d.status === DOWNLOAD_STATUS.ERROR).length
@@ -332,6 +355,7 @@ class DownloadsRenderer {
       if (this.elements.downloadPath) {
         this.elements.downloadPath.textContent = result.data;
       }
+      this.currentDownloadPath = result.data;
     }
   }
 }

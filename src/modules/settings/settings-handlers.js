@@ -14,6 +14,9 @@ function registerSettingsHandlers(downloadManager) {
 
   ipcMain.handle('update-settings', async (event, settings) => {
     try {
+      if (settings.autoExtract === false) {
+        settings.autoConvertISO = false;
+      }
       await downloadManager.store.updateSettings(settings);
       
       if (settings.numConnections !== undefined) {

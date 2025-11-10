@@ -81,6 +81,11 @@ class DownloadItem {
     this.updatedAt = new Date().toISOString();
   }
 
+  setConvertingIsoToXex() {
+    this.status = DOWNLOAD_STATUS.CONVERTING_ISO_TO_XEX;
+    this.updatedAt = new Date().toISOString();
+  }
+
   cancel() {
     this.status = DOWNLOAD_STATUS.CANCELLED;
     this.speed = 0;

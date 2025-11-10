@@ -1,6 +1,7 @@
 const { session, dialog, shell, app } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
+const { spawn } = require('child_process');
 const extract = require('extract-zip');
 const DownloadItem = require('./download-item');
 const DownloadsStore = require('../../store/downloads-store');
@@ -156,7 +157,6 @@ class DownloadManager {
         this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
         this.parallelDownloaders.delete(downloadItem.id);
 
-        // Verificar se deve extrair arquivos .zip
         await this.handleZipExtraction(downloadItem);
 
         this.activeDownloads = this.activeDownloads.filter(id => id !== downloadItem.id);
@@ -254,8 +254,6 @@ class DownloadManager {
     if (state === 'completed') {
       downloadItem.complete();
       this.notifyRenderer('download-completed', downloadItem.toJSON());
-      
-      // Verificar se deve extrair arquivos .zip
       await this.handleZipExtraction(downloadItem);
     } else if (state === 'cancelled') {
       downloadItem.cancel();
@@ -314,6 +312,9 @@ class DownloadManager {
       await extract(downloadItem.savePath, { dir: extractDir });
       console.log(`Extração concluída: ${downloadItem.filename}`);
       
+      // Verificar e converter arquivos ISO se necessário
+      await this.handleISOConversion(extractDir, downloadItem);
+      
       // Deletar o arquivo ZIP original após extração bem-sucedida
       try {
         await fs.unlink(downloadItem.savePath);
@@ -337,17 +338,170 @@ class DownloadManager {
     }
   }
 
+  async findISOFiles(dir) {
+    const isoFiles = [];
+    
+    try {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        
+        if (entry.isDirectory()) {
+          // Buscar recursivamente em subdiretórios
+          const subDirISOs = await this.findISOFiles(fullPath);
+          isoFiles.push(...subDirISOs);
+        } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.iso')) {
+          isoFiles.push(fullPath);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar arquivos ISO:', error);
+    }
+    
+    return isoFiles;
+  }
+
+  async convertISOToXEX(isoPath, downloadItem) {
+    return new Promise((resolve, reject) => {
+      try {
+        // Criar diretório destino (mesmo nome do ISO sem extensão)
+        const isoDir = path.dirname(isoPath);
+        const isoName = path.basename(isoPath, path.extname(isoPath));
+        const outputDir = path.join(isoDir, isoName);
+        
+        // Criar diretório de saída
+        fs.mkdir(outputDir, { recursive: true }).then(() => {
+          // Caminho do exiso.exe (funciona tanto em dev quanto quando empacotado)
+          const exisoPath = path.join(app.getAppPath(), 'src', 'tools', 'exiso.exe');
+          
+          console.log(`Convertendo ISO: ${isoPath} para ${outputDir}...`);
+          
+          // Executar exiso.exe -d <diretório_destino> <arquivo_iso>
+          const exisoProcess = spawn(exisoPath, ['-d', outputDir, isoPath], {
+            cwd: path.dirname(exisoPath),
+            stdio: 'pipe'
+          });
+          
+          let stdout = '';
+          let stderr = '';
+          
+          exisoProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
+          });
+          
+          exisoProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+          });
+          
+          exisoProcess.on('close', (code) => {
+            if (code === 0) {
+              console.log(`Conversão concluída: ${path.basename(isoPath)}`);
+              resolve(outputDir);
+            } else {
+              console.error(`Erro na conversão (código ${code}): ${stderr}`);
+              reject(new Error(`Conversão falhou com código ${code}: ${stderr}`));
+            }
+          });
+          
+          exisoProcess.on('error', (error) => {
+            console.error('Erro ao executar exiso.exe:', error);
+            reject(error);
+          });
+        }).catch(reject);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async handleISOConversion(extractDir, downloadItem) {
+    try {
+      const settings = this.store.getSettings();
+      
+      // Verificar se a conversão automática está habilitada
+      if (!settings.autoConvertISO) {
+        return;
+      }
+
+      // Buscar arquivos ISO no diretório extraído
+      const isoFiles = await this.findISOFiles(extractDir);
+      
+      if (isoFiles.length === 0) {
+        console.log('Nenhum arquivo ISO encontrado para conversão');
+        return;
+      }
+
+      console.log(`Encontrados ${isoFiles.length} arquivo(s) ISO para conversão`);
+
+      // Atualizar status para "Convertendo..."
+      downloadItem.setConvertingIsoToXex();
+      this.notifyRenderer('download-progress', downloadItem.toJSON());
+      this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
+
+      // Converter cada ISO encontrado
+      for (const isoPath of isoFiles) {
+        try {
+          await this.convertISOToXEX(isoPath, downloadItem);
+          
+          // Deletar o arquivo ISO original após conversão bem-sucedida
+          try {
+            await fs.unlink(isoPath);
+            console.log(`Arquivo ISO deletado: ${path.basename(isoPath)}`);
+          } catch (error) {
+            console.error('Erro ao deletar arquivo ISO:', error);
+            // Não interrompe o fluxo, apenas loga o erro
+          }
+        } catch (error) {
+          console.error(`Erro ao converter ISO ${path.basename(isoPath)}:`, error);
+          // Continua com os próximos ISOs mesmo se um falhar
+        }
+      }
+
+      console.log('Conversão de ISOs concluída');
+      
+    } catch (error) {
+      console.error('Erro ao processar conversão de ISOs:', error);
+      // Não interrompe o fluxo, apenas loga o erro
+    }
+  }
+
   getAllDownloads() {
     return Array.from(this.downloads.values()).map(d => d.toJSON());
   }
 
   async openDownloadFolder(filePath) {
+    const pathExists = async (targetPath) => {
+      if (!targetPath) return false;
+      try {
+        await fs.access(targetPath);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
     if (filePath) {
-      shell.showItemInFolder(filePath);
-    } else {
-      const downloadPath = await this.getDownloadPath();
-      shell.openPath(downloadPath);
+      if (await pathExists(filePath)) {
+        shell.showItemInFolder(filePath);
+        return;
+      }
+
+      const extractedDir = filePath.replace(/\.zip$/i, '');
+      if (extractedDir !== filePath && (await pathExists(extractedDir))) {
+        shell.openPath(extractedDir);
+        return;
+      }
+
+      const parentDir = path.dirname(filePath);
+      if (await pathExists(parentDir)) {
+        shell.openPath(parentDir);
+        return;
+      }
     }
+
+    const downloadPath = await this.getDownloadPath();
+    shell.openPath(downloadPath);
   }
 
   async chooseDownloadFolder() {
