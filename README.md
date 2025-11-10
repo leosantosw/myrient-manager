@@ -1,6 +1,6 @@
 <div align="center" id="erista-app">
 
-# 🎮 Gerenciador Myrient
+# [Gerenciador para Myrient](#erista-app)
 
 <p>
   <img src="https://img.shields.io/badge/Electron-191970?style=for-the-badge&logo=Electron&logoColor=white">
