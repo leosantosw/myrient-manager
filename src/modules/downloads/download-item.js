@@ -76,6 +76,11 @@ class DownloadItem {
     this.updatedAt = new Date().toISOString();
   }
 
+  setExtracting() {
+    this.status = DOWNLOAD_STATUS.EXTRACTING;
+    this.updatedAt = new Date().toISOString();
+  }
+
   cancel() {
     this.status = DOWNLOAD_STATUS.CANCELLED;
     this.speed = 0;

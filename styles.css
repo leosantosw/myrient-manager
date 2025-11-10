@@ -718,6 +718,16 @@ th.sort-desc .sort-indicator::after {
   font-size: 0.9rem;
 }
 
+.download-extracting-info {
+  text-align: center;
+  padding: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  color: #8b5cf6;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 .download-card.status-in_progress {
   border-left: 3px solid var(--primary-color);
 }
@@ -728,6 +738,10 @@ th.sort-desc .sort-indicator::after {
 
 .download-card.status-completed {
   border-left: 3px solid var(--success-color);
+}
+
+.download-card.status-extracting {
+  border-left: 3px solid #8b5cf6;
 }
 
 .download-card.status-cancelled {

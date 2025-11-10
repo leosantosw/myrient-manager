@@ -20,6 +20,7 @@ class SettingsRenderer {
       maxConcurrentValue: document.getElementById('max-concurrent-value'),
       maxHistory: document.getElementById('max-history'),
       maxHistoryValue: document.getElementById('max-history-value'),
+      autoExtract: document.getElementById('auto-extract'),
       
       testUrlBtn: document.getElementById('test-url-btn'),
       browsePathBtn: document.getElementById('browse-path-btn'),
@@ -53,6 +54,10 @@ class SettingsRenderer {
 
     this.elements.maxHistory.addEventListener('input', (e) => {
       this.elements.maxHistoryValue.textContent = e.target.value;
+      triggerAutoSave();
+    });
+
+    this.elements.autoExtract.addEventListener('change', () => {
       triggerAutoSave();
     });
 
@@ -100,6 +105,7 @@ class SettingsRenderer {
     this.elements.maxConcurrentValue.textContent = settings.maxConcurrentDownloads || 1;
     this.elements.maxHistory.value = settings.maxHistory || 100;
     this.elements.maxHistoryValue.textContent = settings.maxHistory || 100;
+    this.elements.autoExtract.checked = settings.autoExtract || false;
   }
 
   async testUrl() {
@@ -122,7 +128,8 @@ class SettingsRenderer {
           defaultDownloadPath: this.elements.downloadPath.value,
           numConnections: parseInt(this.elements.numConnections.value),
           maxConcurrentDownloads: parseInt(this.elements.maxConcurrent.value),
-          maxHistory: parseInt(this.elements.maxHistory.value)
+          maxHistory: parseInt(this.elements.maxHistory.value),
+          autoExtract: this.elements.autoExtract.checked
         };
         
         const saveResult = await window.electronAPI.settings.updateSettings(settings);
@@ -169,7 +176,8 @@ class SettingsRenderer {
       defaultDownloadPath: this.elements.downloadPath.value,
       numConnections: parseInt(this.elements.numConnections.value),
       maxConcurrentDownloads: parseInt(this.elements.maxConcurrent.value),
-      maxHistory: parseInt(this.elements.maxHistory.value)
+      maxHistory: parseInt(this.elements.maxHistory.value),
+      autoExtract: this.elements.autoExtract.checked
     };
 
     try {
@@ -199,7 +207,8 @@ class SettingsRenderer {
       defaultDownloadPath: this.elements.downloadPath.value,
       numConnections: parseInt(this.elements.numConnections.value),
       maxConcurrentDownloads: parseInt(this.elements.maxConcurrent.value),
-      maxHistory: parseInt(this.elements.maxHistory.value)
+      maxHistory: parseInt(this.elements.maxHistory.value),
+      autoExtract: this.elements.autoExtract.checked
     };
 
     if (!settings.myrientUrl) {

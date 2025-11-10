@@ -5,6 +5,7 @@ const DOWNLOAD_STATUS = {
   IN_PROGRESS: 'in_progress',
   PAUSED: 'paused',
   COMPLETED: 'completed',
+  EXTRACTING: 'extracting',
   CANCELLED: 'cancelled',
   ERROR: 'error'
 };
@@ -14,6 +15,7 @@ const STATUS_LABELS = {
   [DOWNLOAD_STATUS.IN_PROGRESS]: 'Baixando',
   [DOWNLOAD_STATUS.PAUSED]: 'Pausado',
   [DOWNLOAD_STATUS.COMPLETED]: 'Concluído',
+  [DOWNLOAD_STATUS.EXTRACTING]: 'Extraindo...',
   [DOWNLOAD_STATUS.CANCELLED]: 'Cancelado',
   [DOWNLOAD_STATUS.ERROR]: 'Erro'
 };

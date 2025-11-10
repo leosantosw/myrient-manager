@@ -1,6 +1,7 @@
 const { session, dialog, shell, app } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
+const extract = require('extract-zip');
 const DownloadItem = require('./download-item');
 const DownloadsStore = require('../../store/downloads-store');
 const ParallelDownloader = require('./parallel-downloader');
@@ -149,11 +150,14 @@ class DownloadManager {
         }
       },
       
-      onComplete: () => {
+      onComplete: async () => {
         downloadItem.complete();
         this.notifyRenderer('download-completed', downloadItem.toJSON());
         this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
         this.parallelDownloaders.delete(downloadItem.id);
+
+        // Verificar se deve extrair arquivos .zip
+        await this.handleZipExtraction(downloadItem);
 
         this.activeDownloads = this.activeDownloads.filter(id => id !== downloadItem.id);
         setImmediate(() => this.startNextInQueue());
@@ -239,7 +243,7 @@ class DownloadManager {
     }
   }
 
-  handleDownloadDone(id, state) {
+  async handleDownloadDone(id, state) {
     const downloadItem = this.downloads.get(id);
     if (!downloadItem) return;
     if (this.updateIntervals.has(id)) {
@@ -250,6 +254,9 @@ class DownloadManager {
     if (state === 'completed') {
       downloadItem.complete();
       this.notifyRenderer('download-completed', downloadItem.toJSON());
+      
+      // Verificar se deve extrair arquivos .zip
+      await this.handleZipExtraction(downloadItem);
     } else if (state === 'cancelled') {
       downloadItem.cancel();
       this.notifyRenderer('download-cancelled', downloadItem.toJSON());
@@ -259,6 +266,75 @@ class DownloadManager {
     }
 
     this.store.updateDownload(id, downloadItem.toJSON());
+  }
+
+  async handleZipExtraction(downloadItem) {
+    try {
+      const settings = this.store.getSettings();
+      
+      // Verificar se a extração automática está habilitada
+      if (!settings.autoExtract) {
+        return;
+      }
+
+      // Verificar se o arquivo termina em .zip
+      if (!downloadItem.savePath.toLowerCase().endsWith('.zip')) {
+        return;
+      }
+
+      // Verificar se o arquivo existe
+      try {
+        await fs.access(downloadItem.savePath);
+      } catch {
+        console.log('Arquivo não encontrado para extração:', downloadItem.savePath);
+        return;
+      }
+
+      // Atualizar status para "Extraindo..."
+      downloadItem.setExtracting();
+      this.notifyRenderer('download-progress', downloadItem.toJSON());
+      this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
+
+      // Criar diretório de destino (mesmo nome do arquivo sem a extensão .zip)
+      const extractDir = downloadItem.savePath.replace(/\.zip$/i, '');
+      
+      try {
+        await fs.mkdir(extractDir, { recursive: true });
+      } catch (error) {
+        console.error('Erro ao criar diretório de extração:', error);
+        // Voltar para completed mesmo em caso de erro
+        downloadItem.complete();
+        this.notifyRenderer('download-progress', downloadItem.toJSON());
+        this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
+        return;
+      }
+
+      // Extrair o arquivo ZIP
+      console.log(`Extraindo ${downloadItem.filename} para ${extractDir}...`);
+      await extract(downloadItem.savePath, { dir: extractDir });
+      console.log(`Extração concluída: ${downloadItem.filename}`);
+      
+      // Deletar o arquivo ZIP original após extração bem-sucedida
+      try {
+        await fs.unlink(downloadItem.savePath);
+        console.log(`Arquivo ZIP deletado: ${downloadItem.filename}`);
+      } catch (error) {
+        console.error('Erro ao deletar arquivo ZIP:', error);
+        // Não interrompe o fluxo, apenas loga o erro
+      }
+      
+      // Voltar para completed após extração
+      downloadItem.complete();
+      this.notifyRenderer('download-completed', downloadItem.toJSON());
+      this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
+      
+    } catch (error) {
+      console.error('Erro ao extrair arquivo ZIP:', error);
+      // Voltar para completed mesmo em caso de erro
+      downloadItem.complete();
+      this.notifyRenderer('download-completed', downloadItem.toJSON());
+      this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
+    }
   }
 
   getAllDownloads() {
