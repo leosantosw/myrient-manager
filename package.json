@@ -4,10 +4,11 @@
   "description": "Electron app para listar arquivos do Myrient",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder --win portable"
   },
   "keywords": [],
-  "author": "Leo santos",
+  "author": "Leo Santos",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
@@ -16,6 +17,26 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "electron": "^39.1.1"
+    "electron": "^39.1.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.leosantos.myrientmanager",
+    "productName": "Myrient Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }
