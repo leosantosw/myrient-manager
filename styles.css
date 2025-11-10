@@ -19,6 +19,21 @@
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
+[data-theme="light"] {
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --bg-color: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --success-color: #10b981;
+  --error-color: #ef4444;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background: var(--bg-color);
@@ -34,10 +49,12 @@ body {
 }
 
 .app-header {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   padding: 24px 32px;
-  border-bottom: 2px solid #e2e8f0;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-secondary);
 }
 
 .app-header h1 {
@@ -387,21 +404,6 @@ th.sort-desc .sort-indicator::after {
   overflow: hidden;
 }
 
-.app-header {
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-  padding: 15px 30px;
-}
-
-.app-header h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--primary-color), #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
-}
 
 .tabs-nav {
   display: flex;
@@ -1057,23 +1059,33 @@ th.sort-desc .sort-indicator::after {
 }
 
 .download-badge.downloaded {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color);
+  border: 1px solid var(--success-color);
+}
+
+[data-theme="light"] .download-badge.downloaded {
   background: #d1fae5;
   color: #065f46;
-  border: 1px solid #10b981;
 }
 
 .download-badge.downloaded svg {
-  stroke: #10b981;
+  stroke: var(--success-color);
 }
 
 .download-badge.downloading {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+[data-theme="light"] .download-badge.downloading {
   background: #dbeafe;
   color: #1e40af;
-  border: 1px solid #3b82f6;
 }
 
 .download-badge.downloading svg {
-  stroke: #3b82f6;
+  stroke: var(--primary-color);
 }
 
 .file-downloaded-icon {
@@ -1111,12 +1123,17 @@ th.sort-desc .sort-indicator::after {
   animation: fadeIn 0.3s ease;
 }
 
+[data-theme="light"] .popup-overlay {
+  background: rgba(0, 0, 0, 0.3);
+}
+
 .popup-overlay.hidden {
   display: none;
 }
 
 .popup-container {
-  background: #ffffff;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   max-width: 480px;
   width: 90%;
@@ -1138,20 +1155,20 @@ th.sort-desc .sort-indicator::after {
   justify-content: center;
   width: 64px;
   height: 64px;
-  background: #f8fafc;
+  background: var(--bg-secondary);
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color);
   margin-bottom: 20px;
 }
 
 .popup-icon svg {
-  stroke: #64748b;
+  stroke: var(--text-muted);
 }
 
 .popup-header h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--text-primary);
   margin: 0;
   line-height: 1.3;
 }
@@ -1164,10 +1181,14 @@ th.sort-desc .sort-indicator::after {
   display: flex;
   gap: 14px;
   padding: 16px;
-  background: #fefce8;
+  background: rgba(251, 191, 36, 0.1);
   border: 1px solid #fde047;
   border-radius: 12px;
   margin-bottom: 24px;
+}
+
+[data-theme="light"] .popup-warning {
+  background: #fefce8;
 }
 
 .popup-warning svg {
@@ -1202,21 +1223,21 @@ th.sort-desc .sort-indicator::after {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.875rem;
 }
 
 .developer-badge svg {
-  stroke: #64748b;
+  stroke: var(--text-muted);
   width: 18px;
   height: 18px;
 }
 
 .developer-badge strong {
-  color: #1e293b;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -1224,9 +1245,9 @@ th.sort-desc .sort-indicator::after {
   width: calc(100% - 80px);
   margin: 0 40px 40px;
   padding: 14px 32px;
-  background: #1e293b;
-  color: white;
-  border: none;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   font-size: 0.95rem;
   font-weight: 500;
@@ -1234,10 +1255,20 @@ th.sort-desc .sort-indicator::after {
   transition: all 0.2s ease;
 }
 
+[data-theme="light"] .popup-button {
+  background: #1e293b;
+  color: white;
+  border-color: #1e293b;
+}
+
 .popup-button:hover {
-  background: #334155;
+  background: var(--border-color);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .popup-button:hover {
+  background: #334155;
 }
 
 .popup-button:active {
@@ -1295,4 +1326,53 @@ th.sort-desc .sort-indicator::after {
     width: 36px;
     height: 36px;
   }
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  min-width: 44px;
+  height: 44px;
+}
+
+.theme-toggle:hover {
+  background: var(--border-color);
+  transform: translateY(-1px);
+}
+
+.theme-toggle:active {
+  transform: translateY(0);
+}
+
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+.theme-toggle .theme-icon-sun {
+  display: none;
+}
+
+.theme-toggle .theme-icon-moon {
+  display: block;
+}
+
+[data-theme="light"] .theme-toggle .theme-icon-sun {
+  display: block;
+}
+
+[data-theme="light"] .theme-toggle .theme-icon-moon {
+  display: none;
 }
