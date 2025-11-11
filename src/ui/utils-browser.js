@@ -7,6 +7,7 @@ const DOWNLOAD_STATUS = {
   COMPLETED: 'completed',
   EXTRACTING: 'extracting',
   CONVERTING_ISO_TO_XEX: 'converting_iso_to_xex',
+  MOVING_TO_HD: 'moving_to_hd',
   CANCELLED: 'cancelled',
   ERROR: 'error'
 };
@@ -18,6 +19,7 @@ const STATUS_LABELS = {
   [DOWNLOAD_STATUS.COMPLETED]: 'Concluído',
   [DOWNLOAD_STATUS.EXTRACTING]: 'Extraindo...',
   [DOWNLOAD_STATUS.CONVERTING_ISO_TO_XEX]: 'Convertendo ISO para XEX...',
+  [DOWNLOAD_STATUS.MOVING_TO_HD]: 'Movendo para o HD...',
   [DOWNLOAD_STATUS.CANCELLED]: 'Cancelado',
   [DOWNLOAD_STATUS.ERROR]: 'Erro'
 };

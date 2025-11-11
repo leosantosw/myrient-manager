@@ -7,6 +7,7 @@ class DownloadsRenderer {
     this.elements = {};
     this.downloadCards = new Map();
     this.currentDownloadPath = null;
+    this.playedSoundForDownloads = new Set();
   }
 
   async init() {
@@ -82,6 +83,7 @@ class DownloadsRenderer {
 
     window.electronAPI.downloads.onCompleted((download) => {
       this.updateDownload(download);
+      this.playNotificationSound(download.id);
     });
 
     window.electronAPI.downloads.onPaused((download) => {
@@ -132,6 +134,31 @@ class DownloadsRenderer {
     }
 
     await this.loadDownloadPath();
+  }
+
+  playNotificationSound(downloadId) {
+    if (this.playedSoundForDownloads.has(downloadId)) {
+      return;
+    }
+    
+    try {
+      const audio = new Audio('./assets/smooth-notify-alert.mp3');
+      audio.volume = 0.7; // Volume moderado
+      audio.play().catch(error => {
+        console.log('Erro ao reproduzir som de notificação:', error);
+      });
+      
+      // Marcar que o som já foi tocado para este download
+      this.playedSoundForDownloads.add(downloadId);
+      
+      // Limpar o registro após 5 segundos para evitar acúmulo de memória
+      setTimeout(() => {
+        this.playedSoundForDownloads.delete(downloadId);
+      }, 5000);
+      
+    } catch (error) {
+      console.log('Erro ao criar elemento de áudio:', error);
+    }
   }
 
   async loadDownloadPath() {

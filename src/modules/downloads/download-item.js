@@ -20,6 +20,7 @@ class DownloadItem {
     this.startedAt = null;
     this.completedAt = null;
     this.updatedAt = new Date().toISOString();
+    this.wasMovedToHD = false;
 
     this.electronItem = null;
 
@@ -86,6 +87,11 @@ class DownloadItem {
     this.updatedAt = new Date().toISOString();
   }
 
+  setMovingToHD() {
+    this.status = DOWNLOAD_STATUS.MOVING_TO_HD;
+    this.updatedAt = new Date().toISOString();
+  }
+
   cancel() {
     this.status = DOWNLOAD_STATUS.CANCELLED;
     this.speed = 0;
@@ -117,7 +123,8 @@ class DownloadItem {
       createdAt: this.createdAt,
       startedAt: this.startedAt,
       completedAt: this.completedAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      wasMovedToHD: this.wasMovedToHD
     };
   }
 }

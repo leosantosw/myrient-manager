@@ -365,6 +365,37 @@
                 </select>
               </div>
             </div>
+
+            <div class="settings-group">
+              <label class="settings-label" for="move-to-hd">
+                Mover para HD após o download (beta)
+                <span class="settings-hint">Move automaticamente os arquivos para um HD externo após conclusão</span>
+              </label>
+              <div class="settings-checkbox">
+                <input 
+                  type="checkbox" 
+                  id="move-to-hd"
+                >
+                <span>Habilitar movimento automático</span>
+              </div>
+            </div>
+
+            <div class="settings-group hidden" id="hd-path-group">
+              <label class="settings-label" for="hd-path">
+                Pasta do HD Externo
+                <span class="settings-hint">Local onde os arquivos serão movidos após a conclusão</span>
+              </label>
+              <div class="input-with-button">
+                <input 
+                  type="text" 
+                  id="hd-path" 
+                  class="settings-input"
+                  readonly
+                  placeholder="Selecione a pasta do HD..."
+                >
+                <button id="browse-hd-path-btn" class="btn-secondary">Procurar HD</button>
+              </div>
+            </div>
           </section>
 
           <section class="settings-section">

@@ -23,9 +23,13 @@ class SettingsRenderer {
       autoExtract: document.getElementById('auto-extract'),
       autoConvertISO: document.getElementById('auto-convert-iso'),
       autoConvertContainer: document.getElementById('auto-convert-iso-group'),
+      moveToHD: document.getElementById('move-to-hd'),
+      hdPath: document.getElementById('hd-path'),
+      hdPathContainer: document.getElementById('hd-path-group'),
       
       testUrlBtn: document.getElementById('test-url-btn'),
       browsePathBtn: document.getElementById('browse-path-btn'),
+      browseHdPathBtn: document.getElementById('browse-hd-path-btn'),
       saveBtn: document.getElementById('save-settings-btn'),
       resetBtn: document.getElementById('reset-settings-btn'),
       clearHistoryBtn: document.getElementById('clear-history-btn'),
@@ -64,11 +68,18 @@ class SettingsRenderer {
       triggerAutoSave();
     });
 
+    this.elements.moveToHD.addEventListener('change', () => {
+      this.updateHdPathAvailability();
+      triggerAutoSave();
+    });
+
     if (this.elements.autoConvertISO) {
       this.elements.autoConvertISO.addEventListener('change', () => {
         triggerAutoSave();
       });
     }
+
+
 
     this.elements.testUrlBtn.addEventListener('click', () => {
       this.testUrl();
@@ -76,6 +87,10 @@ class SettingsRenderer {
 
     this.elements.browsePathBtn.addEventListener('click', async () => {
       await this.browsePath();
+    });
+
+    this.elements.browseHdPathBtn.addEventListener('click', async () => {
+      await this.browseHdPath();
     });
 
     this.elements.saveBtn.addEventListener('click', async () => {
@@ -118,7 +133,10 @@ class SettingsRenderer {
     if (this.elements.autoConvertISO) {
       this.elements.autoConvertISO.value = settings.autoExtract && settings.autoConvertISO ? 'xex' : 'none';
     }
+    this.elements.moveToHD.checked = settings.moveToHD || false;
+    this.elements.hdPath.value = settings.hdPath || '';
     this.updateAutoConvertAvailability();
+    this.updateHdPathAvailability();
   }
 
   async testUrl() {
@@ -186,6 +204,20 @@ class SettingsRenderer {
     }
   }
 
+  async browseHdPath() {
+    try {
+      const result = await window.electronAPI.downloads.chooseFolder();
+      
+      if (result.success && result.data) {
+        this.elements.hdPath.value = result.data;
+        this.autoSaveSettings();
+      }
+    } catch (error) {
+      console.error('Erro ao escolher pasta do HD:', error);
+      this.showStatus('Erro ao escolher pasta do HD', 'error');
+    }
+  }
+
   async autoSaveSettings() {
     const settings = {
       myrientUrl: this.elements.myrientUrl.value.trim(),
@@ -196,7 +228,9 @@ class SettingsRenderer {
       autoExtract: this.elements.autoExtract.checked,
       autoConvertISO: this.elements.autoExtract.checked && this.elements.autoConvertISO
         ? this.elements.autoConvertISO.value === 'xex'
-        : false
+        : false,
+      moveToHD: this.elements.moveToHD.checked,
+      hdPath: this.elements.hdPath.value
     };
 
     try {
@@ -230,7 +264,9 @@ class SettingsRenderer {
       autoExtract: this.elements.autoExtract.checked,
       autoConvertISO: this.elements.autoExtract.checked && this.elements.autoConvertISO
         ? this.elements.autoConvertISO.value === 'xex'
-        : false
+        : false,
+      moveToHD: this.elements.moveToHD.checked,
+      hdPath: this.elements.hdPath.value
     };
 
     if (!settings.myrientUrl) {
@@ -332,6 +368,16 @@ class SettingsRenderer {
     }
     if (!canConvert && this.elements.autoConvertISO) {
       this.elements.autoConvertISO.value = 'none';
+    }
+  }
+
+  updateHdPathAvailability() {
+    const moveToHDEnabled = this.elements.moveToHD.checked;
+    if (this.elements.hdPathContainer) {
+      this.elements.hdPathContainer.classList.toggle('hidden', !moveToHDEnabled);
+    }
+    if (!moveToHDEnabled) {
+      this.elements.hdPath.value = '';
     }
   }
 }

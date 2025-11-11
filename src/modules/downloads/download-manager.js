@@ -254,7 +254,18 @@ class DownloadManager {
     if (state === 'completed') {
       downloadItem.complete();
       this.notifyRenderer('download-completed', downloadItem.toJSON());
-      await this.handleZipExtraction(downloadItem);
+      
+      // Se for um arquivo ZIP e a extração automática estiver habilitada, processar extração
+      const settings = this.store.getSettings();
+      if (settings.autoExtract && downloadItem.savePath.toLowerCase().endsWith('.zip')) {
+        await this.handleZipExtraction(downloadItem);
+      } else {
+        const newPath = await this.moveToHD(downloadItem.savePath, downloadItem);
+        if (newPath) {
+          downloadItem.savePath = newPath;
+          this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
+        }
+      }
     } else if (state === 'cancelled') {
       downloadItem.cancel();
       this.notifyRenderer('download-cancelled', downloadItem.toJSON());
@@ -321,10 +332,13 @@ class DownloadManager {
         console.log(`Arquivo ZIP deletado: ${downloadItem.filename}`);
       } catch (error) {
         console.error('Erro ao deletar arquivo ZIP:', error);
-        // Não interrompe o fluxo, apenas loga o erro
       }
       
-      // Voltar para completed após extração
+      const newPath = await this.moveToHD(extractDir, downloadItem);
+      if (newPath) {
+        downloadItem.savePath = newPath;
+      }
+      
       downloadItem.complete();
       this.notifyRenderer('download-completed', downloadItem.toJSON());
       this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
@@ -370,14 +384,11 @@ class DownloadManager {
         const isoName = path.basename(isoPath, path.extname(isoPath));
         const outputDir = path.join(isoDir, isoName);
         
-        // Criar diretório de saída
         fs.mkdir(outputDir, { recursive: true }).then(() => {
-          // Caminho do exiso.exe (funciona tanto em dev quanto quando empacotado)
           const exisoPath = path.join(app.getAppPath(), 'src', 'tools', 'exiso.exe');
           
           console.log(`Convertendo ISO: ${isoPath} para ${outputDir}...`);
           
-          // Executar exiso.exe -d <diretório_destino> <arquivo_iso>
           const exisoProcess = spawn(exisoPath, ['-d', outputDir, isoPath], {
             cwd: path.dirname(exisoPath),
             stdio: 'pipe'
@@ -419,12 +430,10 @@ class DownloadManager {
     try {
       const settings = this.store.getSettings();
       
-      // Verificar se a conversão automática está habilitada
       if (!settings.autoConvertISO) {
         return;
       }
 
-      // Buscar arquivos ISO no diretório extraído
       const isoFiles = await this.findISOFiles(extractDir);
       
       if (isoFiles.length === 0) {
@@ -434,27 +443,22 @@ class DownloadManager {
 
       console.log(`Encontrados ${isoFiles.length} arquivo(s) ISO para conversão`);
 
-      // Atualizar status para "Convertendo..."
       downloadItem.setConvertingIsoToXex();
       this.notifyRenderer('download-progress', downloadItem.toJSON());
       this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
 
-      // Converter cada ISO encontrado
       for (const isoPath of isoFiles) {
         try {
           await this.convertISOToXEX(isoPath, downloadItem);
           
-          // Deletar o arquivo ISO original após conversão bem-sucedida
           try {
             await fs.unlink(isoPath);
             console.log(`Arquivo ISO deletado: ${path.basename(isoPath)}`);
           } catch (error) {
             console.error('Erro ao deletar arquivo ISO:', error);
-            // Não interrompe o fluxo, apenas loga o erro
           }
         } catch (error) {
           console.error(`Erro ao converter ISO ${path.basename(isoPath)}:`, error);
-          // Continua com os próximos ISOs mesmo se um falhar
         }
       }
 
@@ -462,7 +466,73 @@ class DownloadManager {
       
     } catch (error) {
       console.error('Erro ao processar conversão de ISOs:', error);
-      // Não interrompe o fluxo, apenas loga o erro
+    }
+  }
+
+  async moveToHD(sourcePath, downloadItem) {
+    try {
+      const settings = this.store.getSettings();
+      
+      if (!settings.moveToHD || !settings.hdPath) {
+        return;
+      }
+
+      try {
+        await fs.access(sourcePath);
+      } catch {
+        console.log('Arquivo não encontrado para mover para HD:', sourcePath);
+        return;
+      }
+
+      const sourceStats = await fs.stat(sourcePath);
+      const sourceName = path.basename(sourcePath);
+      const targetPath = path.join(settings.hdPath, sourceName);
+
+      downloadItem.setMovingToHD();
+      this.notifyRenderer('download-progress', downloadItem.toJSON());
+      this.store.updateDownload(downloadItem.id, downloadItem.toJSON());
+
+      try {
+        await fs.rename(sourcePath, targetPath);
+        downloadItem.wasMovedToHD = true;
+        return targetPath;
+      } catch (error) {
+        console.error(`Erro ao mover arquivo para HD: ${error.message}`);
+        
+        if (error.code === 'EXDEV') {
+          if (sourceStats.isDirectory()) {
+            await this.copyDirectory(sourcePath, targetPath);
+            await fs.rm(sourcePath, { recursive: true, force: true });
+          } else {
+            await fs.copyFile(sourcePath, targetPath);
+            await fs.unlink(sourcePath);
+          }
+          
+          downloadItem.wasMovedToHD = true;
+          return targetPath;
+        }
+        
+        throw error;
+      }
+    } catch (error) {
+      console.error('Erro ao mover arquivo para HD:', error);
+      return null;
+    }
+  }
+
+  async copyDirectory(source, target) {
+    await fs.mkdir(target, { recursive: true });
+    const entries = await fs.readdir(source, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const srcPath = path.join(source, entry.name);
+      const tgtPath = path.join(target, entry.name);
+      
+      if (entry.isDirectory()) {
+        await this.copyDirectory(srcPath, tgtPath);
+      } else {
+        await fs.copyFile(srcPath, tgtPath);
+      }
     }
   }
 
