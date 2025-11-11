@@ -27,6 +27,8 @@ function parseHTML(html, baseUrl) {
   const $ = cheerio.load(html);
   const files = [];
 
+  const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+
   $('tr').each((index, element) => {
     const $row = $(element);
 
@@ -43,7 +45,7 @@ function parseHTML(html, baseUrl) {
 
     if (!size || size === '-') return;
 
-    const fullUrl = new URL(href, baseUrl).href;
+    const fullUrl = new URL(href, normalizedBaseUrl).href;
 
     files.push({
       name,
